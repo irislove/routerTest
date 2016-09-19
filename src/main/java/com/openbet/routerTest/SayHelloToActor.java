@@ -36,7 +36,7 @@ public class SayHelloToActor extends UntypedActor {
 	
 	@Override
 	public void postRestart(Throwable reason) throws Exception {
-		throw new NullPointerException();
+		throw new IndexOutOfBoundsException();
 	}
 	
 	@Override
