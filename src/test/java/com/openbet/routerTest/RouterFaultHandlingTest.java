@@ -36,7 +36,7 @@ public class RouterFaultHandlingTest {
 	}
 	
 	@Test
-	public void testSupervisorTrategy() throws Exception {
+	public void testSupervisorStrategy() throws Exception {
 		final SupervisorStrategy strategy =
 				  new OneForOneStrategy(1, Duration.create(10, TimeUnit.MINUTES),
 				    Collections.<Class<? extends Throwable>>singletonList(Exception.class));
