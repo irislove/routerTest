@@ -13,11 +13,19 @@ public class SayHelloToActor extends UntypedActor {
 				throw (Exception) ((LinkedHashSet.Entry<?>) message).key();
 			}
 			
-			getSender().tell("Hello", getSelf());
-			System.out.println("Hello" + " " + ((LinkedHashSet.Entry<?>) message).key());
-		} else {
-			getSender().tell("Invalid", getSelf());
-			System.out.println("Unreadable message.");
+			System.out.println(getSelf() + " says: Hello" + " " + ((LinkedHashSet.Entry<?>) message).key());
+			getSender().tell("Hello", getContext().parent());
+		} 
+		else if (message instanceof String) {
+			System.out.println(getSelf() + " says: Hello" + " " + message);
+			getSender().tell("Hello", getContext().parent());
+		}
+		else if (message instanceof Exception) {
+			throw (Exception) message;
+		}
+		else {
+			System.out.println(getSelf() + " says: Unreadable message.");
+			getSender().tell("Invalid", getContext().parent());
 		}
 	}
 

@@ -14,17 +14,15 @@ import akka.actor.ActorSystem;
 import akka.actor.OneForOneStrategy;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
-import akka.routing.ConsistentHashingPool;
-import akka.routing.ConsistentHashingRouter.ConsistentHashableEnvelope;
+import akka.routing.RoundRobinPool;
 import akka.testkit.JavaTestKit;
-import scala.collection.mutable.LinkedHashSet.Entry;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
 public class RouterFaultHandlingTest {
 
 	static ActorSystem system;
-	Duration timeout = Duration.create(5, TimeUnit.SECONDS);
+	Duration timeout = Duration.create(10, TimeUnit.SECONDS);
 	
 	@BeforeClass
 	public static void start() {
@@ -40,12 +38,21 @@ public class RouterFaultHandlingTest {
 	@Test
 	public void testSupervisorTrategy() throws Exception {
 		final SupervisorStrategy strategy =
-				  new OneForOneStrategy(5, Duration.create(1, TimeUnit.MINUTES),
+				  new OneForOneStrategy(1, Duration.create(10, TimeUnit.MINUTES),
 				    Collections.<Class<? extends Throwable>>singletonList(Exception.class));
-		
-        ActorRef router = system.actorOf(new ConsistentHashingPool(2).withSupervisorStrategy(strategy).props(Props.create(SayHelloToActor.class)));
+        ActorRef router = system.actorOf(new RoundRobinPool(3).withSupervisorStrategy(strategy).props(Props.create(SayHelloToActor.class)), "router");
         
-        assert Await.result(ask(router, new ConsistentHashableEnvelope(new Entry<String>("Pikachu"), "message"), 5000), timeout).equals("Hello");
-        assert Await.result(ask(router, new ConsistentHashableEnvelope(new Entry<Exception>(new NullPointerException()), "message"), 5000), timeout).equals("Invalid");
+        assert Await.result(ask(router, "Pikachu", 5000), timeout).equals("Hello");
+        assert Await.result(ask(router, "Charmander", 5000), timeout).equals("Hello");
+        ask(router, new NullPointerException(), 5000);
+        assert Await.result(ask(router, "Jigglypuff", 5000), timeout).equals("Hello");
+        assert Await.result(ask(router, "Squirtle", 5000), timeout).equals("Hello");
+        
+//        ActorRef router = system.actorOf(new ConsistentHashingPool(3).withSupervisorStrategy(strategy).props(Props.create(SayHelloToActor.class)), "router");
+//        
+//        assert Await.result(ask(router, new ConsistentHashableEnvelope(new Entry<String>("Pikachu"), "message"), 5000), timeout).equals("Hello");
+//        assert Await.result(ask(router, new ConsistentHashableEnvelope(new Entry<String>("Charmander"), "message"), 5000), timeout).equals("Hello");
+//        ask(router, new ConsistentHashableEnvelope(new Entry<Exception>(new NullPointerException()), "message"), 5000);
+//        assert Await.result(ask(router, new ConsistentHashableEnvelope(new Entry<String>("Jigglypuff"), "message"), 5000), timeout).equals("Hello");
 	}
 }
